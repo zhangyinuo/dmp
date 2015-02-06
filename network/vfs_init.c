@@ -225,9 +225,10 @@ int init_global()
 			g_config.mindiskfree = i * unit_size;
 	}
 
-	v = myconfig_get_value("vfs_path");
+	v = myconfig_get_value("docroot");
 	if (v == NULL)
-		v = "/home/vfs/path";
+		v = "./";
+	snprintf(g_config.docroot, sizeof(g_config.docroot), "%s", v);
 
 	v = myconfig_get_value("vfs_sync_starttime");
 	if (v == NULL)

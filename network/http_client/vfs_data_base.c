@@ -44,8 +44,51 @@ static void create_header(char *domain, char *url, char *httpheader)
 	l += sprintf(httpheader + l, "Host: %s\r\n\r\n", domain);
 }
 
+static int get_file(char *file)
+{
+	int ret = -1;
+	DIR *dp;
+	struct dirent *dirp;
+	if ((dp = opendir(g_config.docroot)) == NULL) 
+	{
+		LOG(vfs_sig_log, LOG_ERROR, "opendir %s err  %m\n", g_config.docroot);
+		return ret;
+	}
+	LOG(vfs_sig_log, LOG_TRACE, "opendir %s ok \n", g_config.docroot);
+	while((dirp = readdir(dp)) != NULL) 
+	{
+		if (dirp->d_name[0] == '.')
+			continue;
+		snprintf(file, sizeof(file), "%s/%s", g_config.docroot, dirp->d_name);
+		ret = 0;
+		break;
+	}
+	closedir(dp);
+	return ret;
+}
+
 void check_task()
 {
+	static FILE * lastfp = NULL;
+
+	if (lastfp == NULL)
+	{
+		char filename[256] = {0x0};
+		if (get_file(filename))
+			return ;
+
+		lastfp = fopen(filename, "r");
+		if (lastfp == NULL)
+		{
+			LOG(vfs_sig_log, LOG_ERROR, "open %s err  %m\n", filename);
+			return;
+		}
+	}
+
+	int once = 0;
+	char buf[2048] = {0x0};
+
+	while(
 }
 
 
