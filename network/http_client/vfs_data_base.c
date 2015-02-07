@@ -54,7 +54,7 @@ static int get_file(char *file)
 	struct dirent *dirp;
 	if ((dp = opendir(g_config.docroot)) == NULL) 
 	{
-		LOG(vfs_sig_log, LOG_ERROR, "opendir %s err  %m\n", g_config.docroot);
+		LOG(vfs_sig_log, LOG_ERROR, "opendir %s err  %m %d\n", g_config.docroot, sizeof(g_config.docroot));
 		return ret;
 	}
 	LOG(vfs_sig_log, LOG_TRACE, "opendir %s ok \n", g_config.docroot);
@@ -62,7 +62,7 @@ static int get_file(char *file)
 	{
 		if (dirp->d_name[0] == '.')
 			continue;
-		snprintf(file, sizeof(file), "%s/%s", g_config.docroot, dirp->d_name);
+		snprintf(file, 256, "%s/%s", g_config.docroot, dirp->d_name);
 		ret = 0;
 		LOG(vfs_sig_log, LOG_NORMAL, "%s:%s:%d\n", ID, FUNC, LN);
 		break;
