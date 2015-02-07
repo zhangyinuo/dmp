@@ -164,10 +164,23 @@ static int check_req(int fd)
 	off_t fsize = atol(pleng + strlen("Content-Length: "));
 
 	int clen = end - data;
-	int ret = do_req(fd, fsize);
 	LOG(vfs_sig_log, LOG_DEBUG, "%s:%d fd[%d] Content-Length: %ld!\n", FUNC, LN, fd, fsize);
+	if (fsize > 102400)
+	{
+		LOG(vfs_sig_log, LOG_ERROR, "%s:%d fd[%d] Content-Length: %ld too long!\n", FUNC, LN, fd, fsize);
+		return RECV_CLOSE;
+	}
+	char *encode = strstr(data, "Content-Type: ");
+	if (encode)
+	{
+		encode += 14;
+		encode = char
+	}
+	struct conn *curcon = &acon[fd];
+	vfs_cs_peer *peer = (vfs_cs_peer *) curcon->user;
+	peer->sock_stat = RECV_BODY_ING;
 	consume_client_data(fd, clen);
-	return ret;
+	return 0;
 }
 
 int svc_recv(int fd) 
@@ -243,12 +256,7 @@ recvfileing:
 		if (subret == -1)
 			break;
 		if (subret == RECV_CLOSE)
-		{
-			task0->task.base.overstatus = OVER_E_OPEN_SRCFILE;
-			peer->recvtask = NULL;
-			vfs_set_task(task0, TASK_FIN);
 			return RECV_CLOSE;
-		}
 		if (peer->sock_stat == RECV_BODY_ING)
 			goto recvfileing;
 	}
@@ -299,20 +307,6 @@ void svc_finiconn(int fd)
 	if (curcon->user == NULL)
 		return;
 	vfs_cs_peer *peer = (vfs_cs_peer *) curcon->user;
-	if (peer->local_in_fd > 0)
-		close(peer->local_in_fd);
-	peer->local_in_fd = -1;
 	list_del_init(&(peer->alist));
 	list_del_init(&(peer->hlist));
-	t_vfs_tasklist *tasklist = NULL;
-	if (peer->recvtask)
-	{
-		tasklist = peer->recvtask;
-		LOG(vfs_sig_log, LOG_ERROR, "error %s!\n", tasklist->task.base.tmpfile);
-		tasklist->task.base.overstatus = OVER_PEERERR;
-		vfs_set_task(tasklist, TASK_FIN);
-	}
-	memset(curcon->user, 0, sizeof(vfs_cs_peer));
-	free(curcon->user);
-	curcon->user = NULL;
 }

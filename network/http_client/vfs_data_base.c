@@ -12,6 +12,7 @@
  */
 volatile extern int maintain ;		//1-维护配置 0 -可以使用
 extern t_vfs_up_proxy g_proxy;
+static char filename[256] = {0x0};
 
 static inline int isDigit(const char *ptr) 
 {
@@ -37,11 +38,13 @@ static int active_connect(char *ip, int port)
 	return fd;
 }
 
-static void create_header(char *domain, char *url, char *httpheader)
+static int create_header(char *domain, char *url, char *httpheader)
 {
 	int l = sprintf(httpheader, "GET /%s HTTP/1.1\r\n", url);
 
 	l += sprintf(httpheader + l, "Host: %s\r\n\r\n", domain);
+
+	return l;
 }
 
 static int get_file(char *file)
@@ -73,7 +76,6 @@ void check_task()
 
 	if (lastfp == NULL)
 	{
-		char filename[256] = {0x0};
 		if (get_file(filename))
 			return ;
 
@@ -90,7 +92,33 @@ void check_task()
 
 	while(fgets(buf, sizeof(buf), lastfp))
 	{
+		char *t = strchr(buf, '/');
+		if (t == NULL)
+			continue;
+
+		*t = 0x0;
+		char ip[16] = {0x0};
+		if (get_uint32_ip(buf, ip) == INADDR_NONE)
+			continue;
+		int fd = active_connect(ip, 80);
+		if (fd < 0)
+			continue;
+
+		char httpheader[1024] = {0x0};
+		create_header(buf, t + 1, httpheader);
+		active_send(fd, httpheader);
+
+		once++;
+		if (once >= 19)
+			break;
 	}
+
+	if (once < 20)
+		return;
+
+	fclose(lastfp);
+	lastfp = NULL;
+	unlink(filename);
 }
 
 

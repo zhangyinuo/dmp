@@ -12,8 +12,3 @@ int active_send(int fd, char *data)
 	modify_fd_event(fd, EPOLLOUT);
 	return 0;
 }
-
-static int do_req(int fd, off_t fsize)
-{
-	return do_prepare_recvfile(fd, fsize);
-}
