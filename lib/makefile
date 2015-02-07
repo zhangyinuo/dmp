@@ -1,4 +1,4 @@
-OBJ=log.o  util_ip.o myconfig.o md5.o util_hex.o util_misc.o util_str.o myepoll.o protocol.o acl.o common.o pro_voss.o GeneralHashFunctions.o uri_decode.o
+OBJ=log.o  util_ip.o myconfig.o md5.o util_hex.o util_misc.o util_str.o myepoll.o protocol.o acl.o common.o pro_voss.o GeneralHashFunctions.o uri_decode.o myconv.o
 LIBNAME=libvfs
 CXX=g++
 

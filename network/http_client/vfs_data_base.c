@@ -88,7 +88,9 @@ void check_task()
 	int once = 0;
 	char buf[2048] = {0x0};
 
-	while(
+	while(fgets(buf, sizeof(buf), lastfp))
+	{
+	}
 }
 
 
