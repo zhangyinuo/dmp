@@ -42,7 +42,7 @@ static int create_header(char *domain, char *url, char *httpheader)
 {
 	int l = sprintf(httpheader, "GET /%s HTTP/1.1\r\n", url);
 
-	l += sprintf(httpheader + l, "Host: %s\r\n\r\n", domain);
+	l += sprintf(httpheader + l, "Host: %s\r\nConnection: Close\r\n\r\n", domain);
 
 	return l;
 }

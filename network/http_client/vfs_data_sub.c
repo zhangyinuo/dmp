@@ -12,3 +12,8 @@ int active_send(int fd, char *data)
 	modify_fd_event(fd, EPOLLOUT);
 	return 0;
 }
+
+static void do_process(char *data, size_t len, int isutf8)
+{
+	LOG(vfs_sig_log, LOG_DEBUG, "process %.*s\n", len, data);
+}

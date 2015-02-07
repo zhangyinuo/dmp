@@ -399,8 +399,6 @@ int vfs_signalling_thread(void *arg)
 	if (argp->port > 0)
 		epoll_add(epfd, lfd, event);
 	int n = 0, i = 0;
-	time_t last = time(NULL);
-	time_t now = last;
 	LOG(glogfd, LOG_DEBUG, "%s:%s:%d\n", ID, FUNC, LN);
 	while (!stop)
 	{
@@ -413,13 +411,8 @@ int vfs_signalling_thread(void *arg)
 				do_process(pev[i].data.fd, pev[i].events);
 		}
 		thread_reached(thst);
-		now = time(NULL);
-		if (now > last + g_config.cktimeout)
-		{
-			last = now;
-			if (solib.svc_timeout)
-				solib.svc_timeout();
-		}
+		if (solib.svc_timeout)
+			solib.svc_timeout();
 
 	}
 	return 0;

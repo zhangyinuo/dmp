@@ -170,14 +170,23 @@ static int check_req(int fd)
 		LOG(vfs_sig_log, LOG_ERROR, "%s:%d fd[%d] Content-Length: %ld too long!\n", FUNC, LN, fd, fsize);
 		return RECV_CLOSE;
 	}
+	struct conn *curcon = &acon[fd];
+	vfs_cs_peer *peer = (vfs_cs_peer *) curcon->user;
 	char *encode = strstr(data, "Content-Type: ");
 	if (encode)
 	{
 		encode += 14;
-		encode = char
+		char *tmp = strstr(encode, "\r\n");
+		if (tmp == NULL)
+		{
+			LOG(vfs_sig_log, LOG_ERROR, "%s:%d fd[%d] error!\n", FUNC, LN, fd);
+			return RECV_CLOSE;
+		}
+		*tmp = 0x0;
+		if (strstr(encode, "charset=utf"))
+			peer->isutf8 = 1;
+
 	}
-	struct conn *curcon = &acon[fd];
-	vfs_cs_peer *peer = (vfs_cs_peer *) curcon->user;
 	peer->sock_stat = RECV_BODY_ING;
 	consume_client_data(fd, clen);
 	return 0;
@@ -185,68 +194,14 @@ static int check_req(int fd)
 
 int svc_recv(int fd) 
 {
-	char val[256] = {0x0};
 	struct conn *curcon = &acon[fd];
 	vfs_cs_peer *peer = (vfs_cs_peer *) curcon->user;
-	t_vfs_tasklist *task0 = peer->recvtask;
 recvfileing:
 	peer->hbtime = time(NULL);
 	list_move_tail(&(peer->alist), &activelist);
 	LOG(vfs_sig_log, LOG_TRACE, "fd[%d] sock stat %d!\n", fd, peer->sock_stat);
 	if (peer->sock_stat == RECV_BODY_ING)
-	{
-		LOG(vfs_sig_log, LOG_TRACE, "%s:%s:%d\n", ID, FUNC, LN);
-		char *data;
-		size_t datalen;
-		if(task0 == NULL)
-		{
-			LOG(vfs_sig_log, LOG_ERROR, "recv task is null!\n");
-			return RECV_CLOSE;  /* ERROR , close it */
-		}
-		t_vfs_taskinfo *task = &(peer->recvtask->task);
-		if (get_client_data(fd, &data, &datalen))
-		{
-			LOG(vfs_sig_log, LOG_TRACE, "%s:%d fd[%d] no data!\n", FUNC, LN, fd);
-			return RECV_ADD_EPOLLIN;  /*no suffic data, need to get data more */
-		}
-		LOG(vfs_sig_log, LOG_TRACE, "fd[%d] get file %s:%d!\n", fd, task->base.filename, datalen);
-		int remainlen = task->base.fsize - task->sub.lastlen;
-		datalen = datalen <= remainlen ? datalen : remainlen ; 
-		int n = write(peer->local_in_fd, data, datalen);
-		if (n < 0)
-		{
-			LOG(vfs_sig_log, LOG_ERROR, "fd[%d] write error %m close it!\n", fd);
-			snprintf(val, sizeof(val), "write err %m");
-			SetStr(VFS_WRITE_FILE, val);
-			return RECV_CLOSE;  /* ERROR , close it */
-		}
-		consume_client_data(fd, n);
-		task->sub.lastlen += n;
-		if (task->sub.lastlen >= task->base.fsize)
-		{
-			if (close_tmp_check_mv(&(task->base), peer->local_in_fd) != LOCALFILE_OK)
-			{
-				LOG(vfs_sig_log, LOG_ERROR, "fd[%d] get file %s error!\n", fd, task->base.tmpfile);
-				task0->task.base.overstatus = OVER_E_MD5;
-				peer->recvtask = NULL;
-				vfs_set_task(task0, TASK_FIN);
-				snprintf(val, sizeof(val), "md5 error %m");
-				SetStr(VFS_STR_MD5_E, val);
-				return RECV_CLOSE;
-			}
-			else
-			{
-				LOG(vfs_sig_log, LOG_NORMAL, "fd[%d:%u] get file %s ok!\n", fd, peer->ip, task->base.tmpfile);
-				task0->task.base.overstatus = OVER_OK;
-				vfs_set_task(task0, TASK_FIN);
-			}
-			peer->local_in_fd = -1;
-			peer->recvtask = NULL;
-			return RECV_CLOSE;
-		}
-		else
-			return RECV_ADD_EPOLLIN;  /*no suffic data, need to get data more */
-	}
+		return RECV_ADD_EPOLLIN;
 	
 	int ret = RECV_ADD_EPOLLIN;;
 	int subret = 0;
@@ -309,4 +264,10 @@ void svc_finiconn(int fd)
 	vfs_cs_peer *peer = (vfs_cs_peer *) curcon->user;
 	list_del_init(&(peer->alist));
 	list_del_init(&(peer->hlist));
+	char *data;
+	size_t datalen;
+	if (get_client_data(fd, &data, &datalen))
+		return;
+
+	do_process(data, datalen, peer->isutf8);
 }
