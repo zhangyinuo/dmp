@@ -139,16 +139,6 @@ int main(int argc, char **argv) {
 	char *srole = iprole[self_ipinfo.role];
 	LOG(glogfd, LOG_NORMAL, "MY ROLE is %s\n", srole);
 
-	t_thread_arg arg;
-	memset(&arg, 0, sizeof(arg));
-	snprintf(arg.name, sizeof(arg.name), "./http_server.so");
-	LOG(glogfd, LOG_NORMAL, "prepare start %s\n", arg.name);
-	arg.port = g_config.sig_port;
-	arg.flag = 1;
-	arg.maxevent = myconfig_get_intval("vfs_sig_maxevent", 4096);
-	if (init_vfs_thread(&arg))
-		goto error;
-
 	t_thread_arg arg1;
 	memset(&arg1, 0, sizeof(arg1));
 	arg1.queue = TASK_WAIT;
@@ -156,15 +146,6 @@ int main(int argc, char **argv) {
 	LOG(glogfd, LOG_NORMAL, "prepare start %s\n", arg1.name);
 	arg1.maxevent = myconfig_get_intval("vfs_data_maxevent", 4096);
 	if (init_vfs_thread(&arg1))
-		goto error;
-
-	t_thread_arg arg2;
-	memset(&arg2, 0, sizeof(arg2));
-	arg2.queue = TASK_Q_SYNC_DIR;
-	snprintf(arg2.name, sizeof(arg2.name), "./http_client.so");
-	LOG(glogfd, LOG_NORMAL, "prepare start %s\n", arg2.name);
-	arg2.maxevent = myconfig_get_intval("vfs_data_maxevent", 4096);
-	if (init_vfs_thread(&arg2))
 		goto error;
 
 	thread_jumbo_title();

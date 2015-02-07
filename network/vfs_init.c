@@ -229,6 +229,7 @@ int init_global()
 	if (v == NULL)
 		v = "./";
 	snprintf(g_config.docroot, sizeof(g_config.docroot), "%s", v);
+	LOG(glogfd, LOG_NORMAL, "docroot is %s\n", g_config.docroot);
 
 	v = myconfig_get_value("vfs_sync_starttime");
 	if (v == NULL)
