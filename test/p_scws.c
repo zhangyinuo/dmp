@@ -1,5 +1,6 @@
 #include "list.h"
 #include <stdio.h>
+#include <iconv.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -20,6 +21,23 @@ typedef struct {
 #define MAX_LIST 0x3FF
 
 list_head_t alllist[1024];
+
+static int utf8_to_gbk(char *sourcebuf, size_t  sourcelen, char  *destbuf, size_t  destlen )
+{
+	iconv_t cd;
+	if ( (cd = iconv_open( "gbk" , "utf-8"  )) ==0  )
+		return  -1;
+	memset(destbuf,0,destlen);
+	char  **source = &sourcebuf;
+	char  **dest = &destbuf;
+	if (-1 == iconv(cd,source,&sourcelen,dest,&destlen))
+	{
+		iconv_close(cd);
+		return  -1;
+	}
+	iconv_close(cd);
+	return  destlen;
+} 
 
 static uint32_t r5hash(const char *p) 
 {
@@ -143,11 +161,42 @@ static void p_file(char *file, int type)
 		if (t)
 			*t = 0x0;
 
-		p_txt(buf, type);
+		if (type == SOU || type == URL)
+		{
+			char gbk[40960] = {0x0};
+
+			int retlen = utf8_to_gbk(buf, strlen(buf), gbk, sizeof(gbk));
+			if (retlen > 0)
+				p_txt(gbk, type);
+		}
+		else
+			p_txt(buf, type);
 		memset(buf, 0, sizeof(buf));
 	}
 
 	fclose(fp);
+}
+
+static void p_print()
+{
+	int i = 0;
+	for (; i <= MAX_LIST; i++)
+	{
+		list_head_t *hlist = &(alllist[i]);
+		list_head_t *l;
+		t_stock_msg *mc;
+
+		list_for_each(l, hlist)
+		{
+			mc = list_entry(l, t_stock_msg, hlist);
+			int i = HEAD;
+			for (; i < MAX_COUNT; i++)
+			{
+				mc->total += mc->count[i];
+			}
+			fprintf(stdout, "%s %d %d %d %d %d\n", mc->stock, mc->count[0], mc->count[1], mc->count[2], mc->count[3], mc->total);
+		}
+	}
 }
 
 int main()
@@ -171,6 +220,7 @@ int main()
 	p_file("./sou", SOU);
 	p_file("./url", URL);
 
+	p_print();
 	scws_free(s);
 	return 0;
 }
