@@ -10,5 +10,8 @@
 typedef unsigned char u_char;
 
 void ngx_unescape_uri(u_char **dst, u_char **src, size_t size, int type);
+
+void ngx_escape_uri(u_char *dst, u_char *src, size_t size, int type);
+
 #endif
 

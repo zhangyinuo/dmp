@@ -37,8 +37,8 @@ int svc_initconn(int fd);
 int active_send(int fd, char *data);
 const char *sock_stat_cmd[] = {"LOGOUT", "CONNECTED", "LOGIN", "IDLE", "PREPARE_RECVFILE", "RECVFILEING", "SENDFILEING", "LAST_STAT"};
 
-#include "vfs_data_base.c"
 #include "vfs_data_sub.c"
+#include "vfs_data_base.c"
 #include "vfs_data_task.c"
 
 static int init_proxy_info()
@@ -84,7 +84,8 @@ int svc_init(int queue)
 	
 	g_queue = queue;
 	g_queue_tmp = g_queue + 1;
-	return 0;
+
+	return init_stock();
 }
 
 int svc_initconn(int fd) 
@@ -264,6 +265,8 @@ void svc_finiconn(int fd)
 	vfs_cs_peer *peer = (vfs_cs_peer *) curcon->user;
 	list_del_init(&(peer->alist));
 	list_del_init(&(peer->hlist));
+	if (peer->sock_stat != RECV_BODY_ING)
+		return;
 	char *data;
 	size_t datalen;
 	if (get_client_data(fd, &data, &datalen))

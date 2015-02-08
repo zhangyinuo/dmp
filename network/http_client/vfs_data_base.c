@@ -64,7 +64,6 @@ static int get_file(char *file)
 			continue;
 		snprintf(file, 256, "%s/%s", g_config.docroot, dirp->d_name);
 		ret = 0;
-		LOG(vfs_sig_log, LOG_NORMAL, "%s:%s:%d\n", ID, FUNC, LN);
 		break;
 	}
 	closedir(dp);
@@ -93,7 +92,6 @@ void check_task()
 
 	while(fgets(buf, sizeof(buf), lastfp))
 	{
-		LOG(vfs_sig_log, LOG_NORMAL, "%s:%s:%d\n", ID, FUNC, LN);
 		char *t = strchr(buf, '/');
 		if (t == NULL)
 			continue;
@@ -102,15 +100,14 @@ void check_task()
 		char ip[16] = {0x0};
 		if (get_uint32_ip(buf, ip) == INADDR_NONE)
 			continue;
-		LOG(vfs_sig_log, LOG_NORMAL, "%s:%s:%d\n", ID, FUNC, LN);
 		int fd = active_connect(ip, 80);
 		if (fd < 0)
 			continue;
 
-		LOG(vfs_sig_log, LOG_NORMAL, "%s:%s:%d\n", ID, FUNC, LN);
 		char httpheader[1024] = {0x0};
 		create_header(buf, t + 1, httpheader);
 		active_send(fd, httpheader);
+		do_process_req(buf, t+1);
 
 		once++;
 		if (once >= 19)
