@@ -42,7 +42,7 @@ static int create_header(char *domain, char *url, char *httpheader)
 {
 	int l = sprintf(httpheader, "GET /%s HTTP/1.1\r\n", url);
 
-	l += sprintf(httpheader + l, "Host: %s\r\nConnection: Close\r\n\r\n", domain);
+	l += sprintf(httpheader + l, "Host: %s\r\nUser-Agent: HTTPCLIENT\r\nConnection: Close\r\n\r\n", domain);
 
 	return l;
 }
@@ -73,6 +73,7 @@ static int get_file(char *file)
 void check_task()
 {
 	static FILE * lastfp = NULL;
+	static int total = 0;
 
 	if (lastfp == NULL)
 	{
@@ -92,6 +93,8 @@ void check_task()
 
 	while(fgets(buf, sizeof(buf), lastfp))
 	{
+		once++;
+		total++;
 		char *t = strchr(buf, '/');
 		if (t == NULL)
 			continue;
@@ -109,12 +112,14 @@ void check_task()
 		active_send(fd, httpheader);
 		do_process_req(buf, t+1);
 
-		once++;
 		if (once >= 19)
-			break;
+		{
+			LOG(vfs_sig_log, LOG_NORMAL, "total = %d\n", total);
+			return;
+		}
 	}
 
-	if (once < 20)
+	if (once >= 0 && once < 20)
 		return;
 
 	fclose(lastfp);

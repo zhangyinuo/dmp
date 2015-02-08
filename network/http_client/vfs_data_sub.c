@@ -70,13 +70,13 @@ static void do_print_process(int type, char *data)
 
 static int check_sou(char *domain)
 {
-	if (strcasestr(domain, "baidu.com") == 0)
+	if (strcasestr(domain, "baidu.com"))
 		return 0;
-	if (strcasestr(domain, "sou.com") == 0)
+	if (strcasestr(domain, "sou.com"))
 		return 0;
-	if (strcasestr(domain, "soso.com") == 0)
+	if (strcasestr(domain, "soso.com"))
 		return 0;
-	if (strcasestr(domain, "haosou.com") == 0)
+	if (strcasestr(domain, "haosou.com"))
 		return 0;
 	return -1;
 }
@@ -85,7 +85,7 @@ static void do_process_req(char *domain, char *url)
 {
 	u_char durl[1024] = {0x0};
 	u_char *ddurl = durl;
-	ngx_unescape_uri(&ddurl, (u_char **)url, strlen(url), 0);
+	ngx_unescape_uri(&ddurl, (u_char **)&url, strlen(url), 0);
 
 	if (check_sou(domain))
 		do_print_process(URL, (char *)durl);
@@ -95,18 +95,23 @@ static void do_process_req(char *domain, char *url)
 
 static int get_title(char *src, int srclen, char *dst)
 {
-	char *s = strstr(src, "<title>");
+	char *s = strcasestr(src, "<title>");
 	if (s == NULL)
 		return -1;
 
-	char *e = strstr(s, "</title>");
+	char *e = strcasestr(s, "</title>");
 	if (e == NULL)
 		return -1;
 
+	LOG(vfs_sig_log, LOG_DEBUG, "prepare head!\n");
 	if (e - s - 7 > 1024)
+	{
+		LOG(vfs_sig_log, LOG_DEBUG, "prepare head error!\n");
 		return -1;
+	}
 
 	strncpy(dst, s + 7, e - s - 7);
+	LOG(vfs_sig_log, LOG_DEBUG, "get head [%s]!\n", dst);
 	return 0;
 
 }
