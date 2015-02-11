@@ -13,6 +13,10 @@ FILE *fp_url = NULL;
 FILE *fp_head = NULL;
 FILE *fp_body = NULL;
 
+#define MAX_CONVERT 204800
+
+char convert_dst[MAX_CONVERT];
+
 enum {SOU = 0, URL, HEAD, BODY};
 
 int active_send(int fd, char *data)
@@ -137,22 +141,16 @@ static void do_process(char *data, size_t len, int isutf8)
 		do_process_sub(data, len);
 		return;
 	}
-	char *dst = malloc (len << 1);
-	if (dst == NULL)
-	{
-		LOG(vfs_sig_log, LOG_ERROR, "malloc err %m\n");
-		return;
-	}
+	char *dst = convert_dst;
 
-	memset(dst, 0, len << 1);
+	memset(dst, 0, MAX_CONVERT);
 
-	if (utf8_to_gbk(data, len, dst, len << 1) == 0)
+	if (utf8_to_gbk(data, len, dst, MAX_CONVERT) == 0)
 	{
 		LOG(vfs_sig_log, LOG_DEBUG, "process utf8 %s\n", dst);
-		do_process_sub(dst, len << 1);
+		do_process_sub(dst, MAX_CONVERT);
 	}
 	else
 		LOG(vfs_sig_log, LOG_ERROR, "utf8_to_gbk err %m\n");
 
-	free(dst);
 }

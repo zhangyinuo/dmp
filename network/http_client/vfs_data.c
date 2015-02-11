@@ -238,20 +238,17 @@ int svc_send(int fd)
 
 void svc_timeout()
 {
-	if (self_ipinfo.role == ROLE_CS)
+	time_t now = time(NULL);
+	int to = g_config.timeout * 10;
+	vfs_cs_peer *peer = NULL;
+	list_head_t *l;
+	list_for_each_entry_safe_l(peer, l, &activelist, alist)
 	{
-		time_t now = time(NULL);
-		int to = g_config.timeout * 10;
-		vfs_cs_peer *peer = NULL;
-		list_head_t *l;
-		list_for_each_entry_safe_l(peer, l, &activelist, alist)
-		{
-			if (peer == NULL)
-				continue;   /*bugs */
-			if (now - peer->hbtime < to)
-				break;
-			do_close(peer->fd);
-		}
+		if (peer == NULL)
+			continue;   /*bugs */
+		if (now - peer->hbtime < to)
+			break;
+		do_close(peer->fd);
 	}
 	check_task();
 }

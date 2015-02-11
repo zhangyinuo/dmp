@@ -1,0 +1,4 @@
+= Start
+@ ./test_mallo:[0x4005c3] + 0x24e7460 0x4
+@ ./test_mallo:[0x4005e1] - 0x24e7460
+= End

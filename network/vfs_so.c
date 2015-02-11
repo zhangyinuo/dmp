@@ -270,7 +270,8 @@ static void do_recv(int fd)
 			if (n == init_buff_size)
 			{
 				LOG(glogfd, LOG_TRACE, "fd[%d] need recv nextloop %d\n", fd, n);
-				continue;
+				return do_close(fd);
+				//continue; for mem leak
 			}
 			break;
 		}
